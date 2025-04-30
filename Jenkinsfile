@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Clonar código') {
             steps {
-                git url: 'https://github.com/Cesar-Fex04/ApiSlack.git', branch: "${env.BRANCH_NAME}"
+                git url: 'https://github.com/Cesar-Fex04/planetas.git', branch: "${env.BRANCH_NAME}"
             }
         }
 
