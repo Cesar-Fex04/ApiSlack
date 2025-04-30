@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "echo \"No build process defined yet\""
   },
   "keywords": [
@@ -15,5 +15,7 @@
   "author": "Tu Nombre",
   "license": "ISC",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
 }
