@@ -1,73 +1,61 @@
 pipeline {
     agent any
 
-    // Si prefieres usar polling en lugar de un webhook:
-    triggers {
-        pollSCM('H/5 * * * *')
+    environment {
+        EMAIL = 'tuemail@ejemplo.com'
     }
 
     stages {
-        stage('Checkout') {
+        stage('Clonar código') {
             steps {
-                git 'https://github.com/Cesar-Fex04/ApiSlack.git'
+                git url: 'https://github.com/tuusuario/tu-repo.git', branch: "${env.BRANCH_NAME}"
             }
         }
 
-        stage('Build') {
+        stage('Instalar dependencias') {
             steps {
-                echo '🔨 Compilando el proyecto...'
-                // Aquí tu comando real de build, por ejemplo:
-                // sh './gradlew clean build -x test'
+                sh 'pip install -r requirements.txt'
             }
         }
 
-        stage('Test') {
+        stage('Pruebas') {
             steps {
-                echo '🧪 Ejecutando pruebas...'
-                // Aquí tu comando real de test, por ejemplo:
-                // sh './gradlew test'
-            }
-            post {
-                // Publica resultados JUnit si usas JUnit
-                always {
-                    junit '**/build/test-results/**/*.xml'
-                }
+                sh 'pytest tests/'
             }
         }
 
-        stage('Deploy') {
+        stage('Construir') {
+            steps {
+                echo "Compilando en la rama ${env.BRANCH_NAME}..."
+            }
+        }
+
+        stage('Desplegar') {
             when {
-                // Solo despliega si todo va bien
-                expression { currentBuild.currentResult == 'SUCCESS' }
+                branch 'main'
             }
             steps {
-                echo '🚀 Desplegando aplicación...'
-                // Ejemplo con SSH agent:
-                // sshagent(['ssh-deploy-key']) {
-                //   sh 'scp path/to/artifact user@servidor:/ruta/'
-                //   sh 'ssh user@servidor "systemctl restart servicio"'
-                // }
+                echo 'Desplegando...'
+                sh './scripts/deploy.sh'
             }
         }
     }
 
     post {
         success {
-            slackSend(
-                channel: '#deployments',
-                color: 'good',
-                message: "✅ *BUILD EXITOSO* - `${env.JOB_NAME}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|ver>)"
+            emailext (
+                subject: "✔️ Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "La rama ${env.BRANCH_NAME} se construyó y pasó las pruebas.",
+                to: "${EMAIL}"
             )
         }
+
         failure {
-            slackSend(
-                channel: '#deployments',
-                color: 'danger',
-                message: "❌ *BUILD FALLIDO* - `${env.JOB_NAME}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|ver>)"
+            emailext (
+                subject: "❌ Build FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Falló en la rama ${env.BRANCH_NAME}.",
+                to: "${EMAIL}"
             )
-        }
-        always {
-            cleanWs()
         }
     }
 }
