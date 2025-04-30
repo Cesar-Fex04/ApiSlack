@@ -14,10 +14,6 @@
   ],
   "author": "Tu Nombre",
   "license": "ISC",
-  "dependencies": {
-    // Aquí irán las dependencias de tu proyecto
-  },
-  "devDependencies": {
-    // Aquí irán las dependencias de desarrollo (para pruebas, linting, etc.)
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
