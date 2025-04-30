@@ -39,7 +39,7 @@ pipeline {
 
                     echo "Current branch: ${branch}"
 
-                    if (branch == 'main' || branch == 'origin/main') {
+                    if (branch == 'main' || branch == 'origin/rama1') {
                         echo "Deploying to Vercel..."
 
                         def output = sh(
