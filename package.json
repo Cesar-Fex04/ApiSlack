@@ -1,0 +1,23 @@
+{
+  "name": "api-slack",
+  "version": "1.0.0",
+  "description": "Descripción de tu API de Slack",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "echo \"No build process defined yet\""
+  },
+  "keywords": [
+    "slack",
+    "api"
+  ],
+  "author": "Tu Nombre",
+  "license": "ISC",
+  "dependencies": {
+    // Aquí irán las dependencias de tu proyecto
+  },
+  "devDependencies": {
+    // Aquí irán las dependencias de desarrollo (para pruebas, linting, etc.)
+  }
+}
