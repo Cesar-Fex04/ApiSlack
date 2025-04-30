@@ -4,11 +4,11 @@ pipeline {
     environment {
         EMAIL = 'allisonnavalles1408@gmail.com'
         NODE_ENV = 'development'
-        SLACK_WEBHOOK_URL = credentials('slack-webhook') // debes configurar esto en Jenkins
+        SLACK_WEBHOOK_URL = credentials('slack-webhook') // Define esta credencial en Jenkins como "Secret text"
     }
 
     tools {
-        nodejs 'NodeJS 16' // Asegúrate de tener esta herramienta instalada en Jenkins
+        nodejs 'NodeJS 16' // Asegúrate de que este nombre exista en Jenkins > Global Tool Configuration
     }
 
     options {
@@ -24,8 +24,8 @@ pipeline {
 
         stage('Instalar dependencias') {
             steps {
-                sh 'pip install -r requirements.txt || true' // si no tienes requirements.txt en todas las ramas
-                sh 'npm install || true' // para proyectos JS
+                sh 'pip install -r requirements.txt || true'  // Para Python (opcional)
+                sh 'npm install || true'                      // Para Node.js
             }
         }
 
@@ -44,7 +44,7 @@ pipeline {
 
         stage('Compilar') {
             steps {
-                sh 'npm run build || true' // compila si es necesario
+                sh 'npm run build || true' // Si aplica para el proyecto
             }
         }
 
@@ -61,19 +61,35 @@ pipeline {
     post {
         success {
             echo '✅ Build exitoso.'
-            slackSend(color: 'good', message: "✅ Build ${env.BUILD_NUMBER} exitoso en ${env.JOB_NAME}")
+            slackSend(
+                webhookUrl: "${env.SLACK_WEBHOOK_URL}",
+                channel: "#alertas",
+                color: 'good',
+                message: "✅ Build ${env.BUILD_NUMBER} exitoso en ${env.JOB_NAME}"
+            )
             emailext(
                 subject: "✔️ Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "La rama ${env.BRANCH_NAME} pasó pruebas y fue desplegada.",
                 to: "${EMAIL}"
             )
         }
+
         failure {
             echo '❌ Build fallido.'
-            slackSend(color: 'danger', message: "❌ Build ${env.BUILD_NUMBER} fallido en ${env.JOB_NAME}")
+            slackSend(
+                webhookUrl: "${env.SLACK_WEBHOOK_URL}",
+                channel: "#alertas",
+                color: 'danger',
+                message: "❌ Build ${env.BUILD_NUMBER} fallido en ${env.JOB_NAME}"
+            )
             emailext(
                 subject: "❌ Build FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "Falló la build en la rama ${env.BRANCH_NAME}. Revisa Jenkins: ${env.BUILD_URL}",
+                to: "${EMAIL}"
+            )
+        }
+    }
+}
                 to: "${EMAIL}"
             )
         }
