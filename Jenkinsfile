@@ -16,7 +16,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git url: 'git@github.com:tuOrg/tuRepo.git', branch: 'main'
+        git url: 'https://github.com/Cesar-Fex04/ApiSlack.git', branch: 'main'
       }
     }
 
