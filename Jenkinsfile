@@ -1,10 +1,8 @@
-pipeline {
-     agent any
- ci-cd job {
+ci-cd job {
    agent any
  
      environment {
-         EMAIL = 'tuemail@ejemplo.com'
+         EMAIL = 'allisonnavalles1408@gmail.com'
      }
    environment {
      // Variables globales si las necesitas
@@ -14,7 +12,7 @@ pipeline {
      stages {
          stage('Clonar código') {
              steps {
-                 git url: 'https://github.com/tuusuario/tu-repo.git', branch: "${env.BRANCH_NAME}"
+                 git url: 'https://github.com/Cesar-Fex04/ApiSlack.git', branch: "${env.BRANCH_NAME}"
              }
          }
    options {
