@@ -7,7 +7,7 @@ pipeline {
 
   environment {
     VERCEL_TOKEN = credentials('vercel-token')
-    GITHUB_TOKEN = credentials('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')
+    
   }
 
   stages {
