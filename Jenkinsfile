@@ -4,11 +4,11 @@ pipeline {
     environment {
         EMAIL = 'allisonnavalles1408@gmail.com'
         NODE_ENV = 'development'
-        SLACK_WEBHOOK_URL = credentials('slack-webhook') // Define esta credencial en Jenkins como "Secret text"
+        SLACK_WEBHOOK_URL = credentials('slack-webhook') // Credencial tipo "Secret text"
     }
 
     tools {
-        nodejs 'NodeJS 16' // Asegúrate de que este nombre exista en Jenkins > Global Tool Configuration
+        nodejs 'NodeJS 16' // Verifica que este nombre exista en Global Tool Configuration
     }
 
     options {
@@ -24,8 +24,8 @@ pipeline {
 
         stage('Instalar dependencias') {
             steps {
-                sh 'pip install -r requirements.txt || true'  // Para Python (opcional)
-                sh 'npm install || true'                      // Para Node.js
+                sh 'pip install -r requirements.txt || true'
+                sh 'npm install || true'
             }
         }
 
@@ -44,7 +44,7 @@ pipeline {
 
         stage('Compilar') {
             steps {
-                sh 'npm run build || true' // Si aplica para el proyecto
+                sh 'npm run build || true'
             }
         }
 
@@ -90,4 +90,3 @@ pipeline {
         }
     }
 }
-             
