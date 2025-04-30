@@ -64,7 +64,7 @@ pipeline {
     failure {
       echo '❌ Build fallido.'
       slackSend (color: 'danger', message: "❌ Build ${env.BUILD_NUMBER} fallido en ${env.JOB_NAME}")
-      mail to: 'tuemail@ejemplo.com',
+      mail to: 'danny1232521lol@gmail.com',
            subject: "❌ Falló la build ${env.JOB_NAME} #${env.BUILD_NUMBER}",
            body: """\
 La build falló.
