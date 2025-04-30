@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        VERCEL_TOKEN = credentials('vercel-token')  // ID de la credencial en Jenkins
+        VERCEL_TOKEN = credentials('vercel_token')  // ID de la credencial en Jenkins
     }
 
     stages {
