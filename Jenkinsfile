@@ -52,10 +52,12 @@ pipeline {
   post {
     success {
       slackSend (
-        channel: '#deployments',
-        webhookUrl: env.SLACK_WEBHOOK,
-        color: 'good',
-        message: "✅ *BUILD EXITOSO* para `${env.JOB_NAME}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|ver>)"
+        slackSend (
+    channel: '#deployments',
+    color: 'good',
+    message: "✅ *BUILD EXITOSO* para `${env.JOB_NAME}` #${env.BUILD_NUMBER} (<${env.BUILD_URL}|ver>)"
+    )
+
       )
       emailext (
         to:     "${env.RECIPIENTS}",
