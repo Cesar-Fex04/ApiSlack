@@ -120,7 +120,7 @@ pipeline {
 
   post {
     success {
-      mail to: 'gaelborchardt@gmail.com, migelatinapkin@gmail.com, frannperez874@gmail.com',
+      mail to: 'danny1232521lol@gmail.com',
         subject: "✅ Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "La construcción fue exitosa en la rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
 
@@ -129,7 +129,7 @@ pipeline {
     }
 
     unstable {
-      mail to: 'gaelborchardt@gmail.com, migelatinapkin@gmail.com, frannperez874@gmail.com',
+      mail to: 'danny1232521lol@gmail.com',
         subject: "⚠️ Error al mergear PR: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "No se pudo hacer merge automático del Pull Request en la rama ${env.BRANCH_NAME}. Revisa conflictos.\n\nDetalles: ${env.BUILD_URL}"
 
@@ -138,7 +138,7 @@ pipeline {
     }
 
     failure {
-      mail to: 'gaelborchardt@gmail.com, migelatinapkin@gmail.com, frannperez874@gmail.com',
+      mail to: 'danny1232521lol@gmail.com',
         subject: "❌ Build Fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "La construcción falló en la rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
 
