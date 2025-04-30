@@ -111,7 +111,7 @@ ci-cd job {
      failure {
        echo '❌ Build fallido.'
        slackSend (color: 'danger', message: "❌ Build ${env.BUILD_NUMBER} fallido en ${env.JOB_NAME}")
-       mail to: 'tuemail@ejemplo.com',
+       mail to: 'allisonnavalles1408@gmail.com',
             subject: "❌ Falló la build ${env.JOB_NAME} #${env.BUILD_NUMBER}",
             body: "Revisa Jenkins: ${env.BUILD_URL}"
      }
