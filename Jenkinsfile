@@ -2,80 +2,72 @@ pipeline {
     agent any
 
     environment {
-        EMAIL = 'allisonnavalles1408@gmail.com'
-        NODE_ENV = 'development'
-        SLACK_WEBHOOK_URL = credentials('slack-webhook') // debes configurar esto en Jenkins
-    }
-
-    tools {
-        nodejs 'NodeJS 16' // Asegúrate de tener esta herramienta instalada en Jenkins
-    }
-
-    options {
-        timestamps()
+        VERCEL_TOKEN = credentials('vercel-token')  // ID de la credencial en Jenkins
     }
 
     stages {
-        stage('Clonar código') {
+        stage('Checkout') {
             steps {
-                git url: 'https://github.com/Cesar-Fex04/planetas.git', branch: "${env.BRANCH_NAME}"
+                checkout scm  // Jenkins ya sabe la rama actual
             }
         }
 
-        stage('Instalar dependencias') {
+        stage('Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt || true' // si no tienes requirements.txt en todas las ramas
-                sh 'npm install || true' // para proyectos JS
+                sh 'npm install'
             }
         }
 
-        stage('Pruebas') {
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        stage('Test'){
+            steps{
+                sh 'npm test'
+            }
+        }
+
+        stage('Conditional Deploy') {
             steps {
                 script {
-                    try {
-                        sh 'pytest tests/ || npm test'
-                    } catch (err) {
-                        currentBuild.result = 'FAILURE'
-                        error("❌ Pruebas fallidas. Abortando despliegue.")
+                    def branch = env.GIT_BRANCH ?: sh(
+                        script: "git rev-parse --abbrev-ref HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Current branch: ${branch}"
+
+                    if (branch == 'main' || branch == 'origin/main') {
+                        echo "Deploying to Vercel..."
+
+                        def output = sh(
+                            script: 'npx vercel --prod --token=$VERCEL_TOKEN --yes --name=my-vite-app',
+                            returnStdout: true
+                        ).trim()
+
+                        def deploymentUrl = output.split('\n').find { it.contains("https") }
+                        echo "Deployment URL: ${deploymentUrl}"
+                    } else {
+                        echo "No deploy. Just built branch '${branch}'"
                     }
                 }
             }
         }
-
-        stage('Compilar') {
-            steps {
-                sh 'npm run build || true' // compila si es necesario
-            }
-        }
-
-        stage('Desplegar') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sh './scripts/deploy.sh || ./deploy.sh'
-            }
-        }
     }
-
     post {
         success {
-            echo '✅ Build exitoso.'
-            slackSend(color: 'good', message: "✅ Build ${env.BUILD_NUMBER} exitoso en ${env.JOB_NAME}")
-            emailext(
-                subject: "✔️ Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "La rama ${env.BRANCH_NAME} pasó pruebas y fue desplegada.",
-                to: "${EMAIL}"
-            )
+            slackSend(channel: '#avisos', message: "✅ Build succeeded for ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+            mail to: 'eildan28a@gmail.com,jorgedrluisj3@gmail.com,kevinx.martinez.haro@gmail.com',
+                 subject: "✅ Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "El build fue exitoso. Ver: ${env.BUILD_URL}"
         }
         failure {
-            echo '❌ Build fallido.'
-            slackSend(color: 'danger', message: "❌ Build ${env.BUILD_NUMBER} fallido en ${env.JOB_NAME}")
-            emailext(
-                subject: "❌ Build FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "Falló la build en la rama ${env.BRANCH_NAME}. Revisa Jenkins: ${env.BUILD_URL}",
-                to: "${EMAIL}"
-            )
+            slackSend(channel: '#avisos', message: "❌ Build failed for ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+            mail to: 'lopez.juliocesar.unison@gmail.com',
+                 subject: "❌ Build fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "Hubo un fallo en el build. Ver detalles: ${env.BUILD_URL}"
         }
     }
 }
