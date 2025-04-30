@@ -39,7 +39,7 @@ pipeline {
 
                     echo "Current branch: ${branch}"
 
-                    if (branch == 'main' || branch == 'origin/rama1') {
+                    if (branch == 'rama1' || branch == 'origin/rama1') {
                         echo "Deploying to Vercel..."
 
                         def output = sh(
@@ -59,7 +59,7 @@ pipeline {
     post {
         success {
             slackSend(channel: '#avisos', message: "✅ Build succeeded for ${env.JOB_NAME} #${env.BUILD_NUMBER}")
-            mail to: 'eildan28a@gmail.com,jorgedrluisj3@gmail.com,kevinx.martinez.haro@gmail.com',
+            mail to: 'lopez.juliocesar.unison@gmail.com',
                  subject: "✅ Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: "El build fue exitoso. Ver: ${env.BUILD_URL}"
         }
