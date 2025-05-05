@@ -1,149 +1,73 @@
 pipeline {
-  agent any
+    agent any
 
-  tools {
-    nodejs "nodeJS"
-  }
-
-  environment {
-    VERCEL_TOKEN = credentials('vercel-token')
-    
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-        sh 'ls -la "ci-cd"'
-      }
+    environment {
+        VERCEL_TOKEN = credentials('vercel_token')  // ID de la credencial en Jenkins
     }
 
-    stage('Install Dependencies') {
-      steps {
-        dir("ci-cd") {
-          sh 'npm install --legacy-peer-deps'
-        }
-      }
-    }
-
-    stage('Run Tests') {
-      steps {
-        dir("ci-cd") {
-          script {
-            try {
-              sh 'npm test'
-            } catch (e) {
-              currentBuild.result = 'FAILURE'
-              error("❌ Tests fallaron. Detalles: ${e}")
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm  // Jenkins ya sabe la rama actual
             }
-          }
         }
-      }
-    }
 
-    stage('Build') {
-      when {
-        expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-      }
-      steps {
-        dir("ci-cd") {
-          sh 'npm run build'
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
         }
-      }
-    }
 
-    stage('Validate PR (Preview Build)') {
-      when {
-        changeRequest()
-      }
-      steps {
-        echo "🔍 Validando Pull Request: ${env.CHANGE_BRANCH} desde ${env.CHANGE_TARGET}"
-      }
-    }
-
-    stage('Deploy Preview to Vercel') {
-      when {
-        allOf {
-          not { branch 'main' }
-          not { changeRequest() }
-          expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+        stage('Build') {
+            steps {
+                sh 'npm run build'
+            }
         }
-      }
-      steps {
-        dir("ci-cd") {
-          sh 'npm install -g vercel'
-          sh 'vercel --token $VERCEL_TOKEN --confirm'
+        stage('Test'){
+            steps{
+                sh 'npm test'
+            }
         }
-      }
-    }
 
-    stage('Deploy to Vercel (main only)') {
-      when {
-        allOf {
-          branch 'main'
-          not { changeRequest() }
-          expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+        stage('Conditional Deploy') {
+            steps {
+                script {
+                    def branch = env.GIT_BRANCH ?: sh(
+                        script: "git rev-parse --abbrev-ref HEAD",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Current branch: ${branch}"
+
+                    if (branch == 'rama1' || branch == 'origin/rama1') {
+                        echo "Deploying to Vercel..."
+
+                        def output = sh(
+                            script: 'npx vercel --prod --token=$VERCEL_TOKEN --yes --name=my-vite-app',
+                            returnStdout: true
+                        ).trim()
+
+                        def deploymentUrl = output.split('\n').find { it.contains("https") }
+                        echo "Deployment URL: ${deploymentUrl}"
+                    } else {
+                        echo "No deploy. Just built branch '${branch}'"
+                    }
+                }
+            }
         }
-      }
-      steps {
-        dir("ci-cd") {
-          sh 'npm install -g vercel'
-          sh 'vercel --prod --token $VERCEL_TOKEN --confirm'
+    }
+    post {
+        success {
+            slackSend(channel: '#avisos', message: "✅ Build succeeded for ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+            mail to: 'danny1232521lol@gmail.com',
+                 subject: "✅ Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "El build fue exitoso. Ver: ${env.BUILD_URL}"
         }
-      }
-    }
-
-    stage('Merge Pull Request') {
-      when {
-        changeRequest()
-      }
-      steps {
-        script {
-          sh 'which gh || (curl -fsSL https://cli.github.com/install.sh | sh || true)'
-          sh 'echo "$GITHUB_TOKEN" | gh auth login --with-token'
-
-          def mergeStatus = sh(
-            script: "gh pr merge $CHANGE_ID --merge --delete-branch --repo $CHANGE_URL",
-            returnStatus: true
-          )
-
-          if (mergeStatus != 0) {
-            currentBuild.result = 'UNSTABLE'
-            error("⚠️ No se pudo hacer merge automático del PR #${CHANGE_ID}. Revisa conflictos.")
-          } else {
-            echo "✅ Pull Request #${CHANGE_ID} mergeado correctamente."
-          }
+        failure {
+            slackSend(channel: '#avisos', message: "❌ Build failed for ${env.JOB_NAME} #${env.BUILD_NUMBER}")
+            mail to: 'danny1232521lol@gmail.com',
+                 subject: "❌ Build fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: "Hubo un fallo en el build. Ver detalles: ${env.BUILD_URL}"
         }
-      }
     }
-  }
-
-  post {
-    success {
-      mail to: 'danny1232521lol@gmail.com',
-        subject: "✅ Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "La construcción fue exitosa en la rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
-
-      slackSend channel: '#api1',
-        message: "✅ Build exitoso en rama ${env.BRANCH_NAME}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-    }
-
-    unstable {
-      mail to: 'danny1232521lol@gmail.com',
-        subject: "⚠️ Error al mergear PR: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "No se pudo hacer merge automático del Pull Request en la rama ${env.BRANCH_NAME}. Revisa conflictos.\n\nDetalles: ${env.BUILD_URL}"
-
-      slackSend channel: '#api1',
-        message: "⚠️ Falló merge automático del PR #${env.CHANGE_ID} en rama ${env.BRANCH_NAME}.\n${env.BUILD_URL}"
-    }
-
-    failure {
-      mail to: 'danny1232521lol@gmail.com',
-        subject: "❌ Build Fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "La construcción falló en la rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
-
-      slackSend channel: '#api1',
-        message: "❌ Build fallido en rama ${env.BRANCH_NAME}: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
-    }
-  }
 }
