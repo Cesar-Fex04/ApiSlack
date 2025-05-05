@@ -1,81 +1,116 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        EMAIL = 'allisonnavalles1408@gmail.com'
-        NODE_ENV = 'development'
-        SLACK_WEBHOOK_URL = credentials('slack-webhook') // debes configurar esto en Jenkins
+  tools {
+    nodejs "NodeJS 16"
+  }
+
+  environment {
+    VERCEL_TOKEN = credentials('vercel-token')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        sh 'ls -la "ci-cd"' // Para verificar que package.json está ahí
+      }
     }
 
-    tools {
-        nodejs 'NodeJS 16' // Asegúrate de tener esta herramienta instalada en Jenkins
+    stage('Install Dependencies') {
+      steps {
+        dir("ci-cd") {
+          sh 'npm install'
+        }
+      }
     }
 
-    options {
-        timestamps()
+    stage('Run Tests') {
+      steps {
+        dir("ci-cd") {
+          script {
+            try {
+              sh 'npm test'
+            } catch (e) {
+              currentBuild.result = 'FAILURE'
+              error("❌ Tests fallaron. Detalles: ${e}")
+            }
+          }
+        }
+      }
     }
 
-    stages {
-        stage('Clonar código') {
-            steps {
-                git url: 'https://github.com/Cesar-Fex04/ApiSlack.git', branch: "${env.BRANCH_NAME}"
-            }
+    stage('Build') {
+      when {
+        expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+      }
+      steps {
+        dir("ci-cd") {
+          sh 'npm run build'
         }
-
-        stage('Instalar dependencias') {
-            steps {
-                sh 'pip install -r requirements.txt || true' // si no tienes requirements.txt en todas las ramas
-                sh 'npm install || true' // para proyectos JS
-            }
-        }
-
-        stage('Pruebas') {
-            steps {
-                script {
-                    try {
-                        sh 'pytest tests/ || npm test'
-                    } catch (err) {
-                        currentBuild.result = 'FAILURE'
-                        error("❌ Pruebas fallidas. Abortando despliegue.")
-                    }
-                }
-            }
-        }
-
-        stage('Compilar') {
-            steps {
-                sh 'npm run build || true' // compila si es necesario
-            }
-        }
-
-        stage('Desplegar') {
-            when {
-                branch 'main'
-            }
-            steps {
-                sh './scripts/deploy.sh || ./deploy.sh'
-            }
-        }
+      }
     }
 
-    post {
-        success {
-            echo '✅ Build exitoso.'
-            slackSend(color: 'good', message: "✅ Build ${env.BUILD_NUMBER} exitoso en ${env.JOB_NAME}")
-            emailext(
-                subject: "✔️ Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "La rama ${env.BRANCH_NAME} pasó pruebas y fue desplegada.",
-                to: "${EMAIL}"
-            )
-        }
-        failure {
-            echo '❌ Build fallido.'
-            slackSend(color: 'danger', message: "❌ Build ${env.BUILD_NUMBER} fallido en ${env.JOB_NAME}")
-            emailext(
-                subject: "❌ Build FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "Falló la build en la rama ${env.BRANCH_NAME}. Revisa Jenkins: ${env.BUILD_URL}",
-                to: "${EMAIL}"
-            )
-        }
+    stage('Validate PR (Preview Build)') {
+      when {
+        changeRequest()
+      }
+      steps {
+        echo "🔍 Validando Pull Request: ${env.CHANGE_BRANCH} desde ${env.CHANGE_TARGET}"
+      }
     }
+
+    stage('Deploy Preview to Vercel') {
+      when {
+        allOf {
+          not { branch 'main' }
+          not { changeRequest() }
+          expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+        }
+      }
+      steps {
+        dir("ci-cd") {
+          sh 'npm install -g vercel'
+          sh 'vercel --token $VERCEL_TOKEN --confirm'
+        }
+      }
+    }
+
+    stage('Deploy to Vercel (main only)') {
+      when {
+        allOf {
+          branch 'main'
+          not { changeRequest() }
+          expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
+        }
+      }
+      steps {
+        dir("ci-cd") {
+          sh 'npm install -g vercel'
+          sh 'vercel --prod --token $VERCEL_TOKEN --confirm'
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+
+      mail to: 'allisonnavalles1408@gmail.com',
+        subject: " Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: "La construcción success ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
+
+      slackSend channel: '#alertas',
+        message: "✅ - Build exitoso en rama ${env.BRANCH_NAME}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+    }
+
+    failure {
+      mail to: 'allisonnavalles1408@gmail.com',
+        subject: "❌ Build Fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: "La construcción falló en rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
+
+      slackSend channel: '#alertas',
+        message: "❌ Build fallido en rama ${env.BRANCH_NAME}: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n${env.BUILD_URL}"
+    }
+  }
 }
