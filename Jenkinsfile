@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   tools {
-    nodejs "nodeJS"
+    nodejs "NodeJS 16"
   }
 
   environment {
@@ -96,7 +96,7 @@ pipeline {
   post {
     success {
 
-      mail to: 'lopez.juliocesar.unison@gmail.com',
+      mail to: 'allisonnavalles1408@gmail.com',
         subject: " Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "La construcción success ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
 
@@ -105,7 +105,7 @@ pipeline {
     }
 
     failure {
-      mail to: 'lopez.juliocesar.unison@gmail.com',
+      mail to: 'allisonnavalles1408@gmail.com',
         subject: "❌ Build Fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "La construcción falló en rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
 
