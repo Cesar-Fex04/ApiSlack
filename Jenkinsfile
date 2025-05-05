@@ -1,9 +1,14 @@
 pipeline {
     agent any
 
+  tools {
+    nodejs "nodeJS"
+  }
+    
     environment {
         VERCEL_TOKEN = credentials('vercel_token')  // ID de la credencial en Jenkins
     }
+
 
     stages {
         stage('Checkout') {
