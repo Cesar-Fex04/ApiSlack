@@ -74,7 +74,7 @@ pipeline {
       }
       steps {
         dir("ci-cd") {
-          withCredentials([string(credentialsId: 'vercel-token', variable: 'VERCEL_TOKEN')]) {
+          withCredentials([string(credentialsId: 'vercel_token', variable: 'VERCEL_TOKEN')]) {
             sh 'vercel --token $VERCEL_TOKEN --confirm'
           }
         }
@@ -91,7 +91,7 @@ pipeline {
       }
       steps {
         dir("ci-cd") {
-          withCredentials([string(credentialsId: 'vercel-token', variable: 'VERCEL_TOKEN')]) {
+          withCredentials([string(credentialsId: 'vercel_token', variable: 'VERCEL_TOKEN')]) {
             sh 'vercel --prod --token $VERCEL_TOKEN --confirm'
           }
         }
