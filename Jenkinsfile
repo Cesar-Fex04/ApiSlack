@@ -2,7 +2,11 @@ pipeline {
   agent any
 
   tools {
-    nodejs "nodeJS"
+    nodejs "NodeJS 16"
+  }
+
+  environment {
+    VERCEL_TOKEN = credentials('vercel-token')
   }
 
   stages {
@@ -56,14 +60,6 @@ pipeline {
       }
     }
 
-    stage('Setup Vercel CLI') {
-      steps {
-        dir("ci-cd") {
-          sh 'npm install -g vercel'
-        }
-      }
-    }
-
     stage('Deploy Preview to Vercel') {
       when {
         allOf {
@@ -74,9 +70,8 @@ pipeline {
       }
       steps {
         dir("ci-cd") {
-          withCredentials([string(credentialsId: 'vercel_token', variable: 'VERCEL_TOKEN')]) {
-            sh 'vercel --token $VERCEL_TOKEN --confirm'
-          }
+          sh 'npm install -g vercel'
+          sh 'vercel --token $VERCEL_TOKEN --confirm'
         }
       }
     }
@@ -91,9 +86,8 @@ pipeline {
       }
       steps {
         dir("ci-cd") {
-          withCredentials([string(credentialsId: 'vercel_token', variable: 'VERCEL_TOKEN')]) {
-            sh 'vercel --prod --token $VERCEL_TOKEN --confirm'
-          }
+          sh 'npm install -g vercel'
+          sh 'vercel --prod --token $VERCEL_TOKEN --confirm'
         }
       }
     }
@@ -101,16 +95,17 @@ pipeline {
 
   post {
     success {
-      mail to: 'lopez.juliocesar.unison@gmail.com',
-        subject: "✅ Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-        body: "La construcción tuvo éxito en rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
+
+      mail to: 'allisonnavalles1408@gmail.com',
+        subject: " Build exitoso: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+        body: "La construcción success ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
 
       slackSend channel: '#alertas',
-        message: "✅ Build exitoso en rama ${env.BRANCH_NAME}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+        message: "✅ - Build exitoso en rama ${env.BRANCH_NAME}: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
     }
 
     failure {
-      mail to: 'lopez.juliocesar.unison@gmail.com',
+      mail to: 'allisonnavalles1408@gmail.com',
         subject: "❌ Build Fallido: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
         body: "La construcción falló en rama ${env.BRANCH_NAME}.\nRevisa: ${env.BUILD_URL}"
 
