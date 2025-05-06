@@ -5,9 +5,7 @@ pipeline {
     nodejs "NodeJS 16"
   }
 
-  environment {
-    VERCEL_TOKEN = credentials('vercel-token')
-  }
+ 
 
   stages {
     stage('Checkout') {
